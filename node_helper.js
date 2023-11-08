@@ -6,22 +6,29 @@ module.exports = NodeHelper.create({
         console.log("MMM-Fass helper started...");
     },
 
-    getStockInfo: function(apiUrl) {
+    getStockInfo: function(productId, authToken) {
         var self = this;
-        request({ url: apiUrl, method: 'GET' }, function (error, response, body) {
+        var options = {
+            url: `https://api.fass.se/medicinal-product/${productId}`,
+            method: 'GET',
+            headers: {
+                'Accept': 'application/fassapi-v1+json',
+                'Authorization': `Bearer ${authToken}`
+            }
+        };
+
+        request(options, function (error, response, body) {
             if (!error && response.statusCode == 200) {
-                // Send the response to the frontend module
                 self.sendSocketNotification("STOCK_INFO", JSON.parse(body));
             } else {
-                console.log("Error getting stock information: " + response.statusCode);
+                console.log("Error getting stock information: ", error ? error : response.statusCode);
             }
         });
     },
 
-    // Subclass socketNotificationReceived received.
     socketNotificationReceived: function(notification, payload) {
         if (notification === "GET_STOCK_INFO") {
-            this.getStockInfo(payload.apiUrl);
+            this.getStockInfo(payload.productId, payload.authToken);
         }
     }
 });
